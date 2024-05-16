@@ -1,0 +1,126 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 24 12:43:52 2023
+
+@author: Oana
+"""
+ 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+import seaborn as sns
+
+data_frame = pd.read_csv(r"C:\Users\Oana\OneDrive\Desktop\tips.csv")
+
+#Afișează numărul de coloane și numărul de înregistrări
+#df.shape() #returnează o tuplă care conține numărul de rânduri și numărul de coloane dintr-un DataFrame
+# df.shape
+# [0] Prima componentă a formei este numărul de rânduri (înregistrări), [1] iar a doua este numărul de coloane.
+ 
+numar_inregistrari = data_frame.shape[0]
+numar_atribute = data_frame.shape[1]
+print(f'Numărul total de înregistrări este: {numar_inregistrari} fiecare avand:{numar_atribute} atribute')
+
+numar_elemente = data_frame.size
+print(f'Numarul total de elemente este {numar_elemente}')
+
+# print(data_frame.info())
+
+# Vizualizăm primele câteva înregistrări din setul de date
+print(data_frame.head())
+
+# Verificăm dacă există valori lipsă
+print(data_frame.isnull().sum())
+
+# Analizăm distribuția datelor numerice
+print(data_frame.describe())
+
+# Vizualizăm distribuția datelor numerice prin histograme
+data_frame.hist()
+plt.show()
+
+# Analizăm relațiile între variabile
+# Exemplu: corelația între Total Bill și Tip
+plt.scatter(data_frame['total_bill'], data_frame['tip'])
+plt.xlabel('total_bill')
+plt.ylabel('tip')
+plt.title('Scatter Plot: Total Bill vs Tip')
+plt.show()
+
+# Vizualizăm relațiile între variabilele categorice folosind tabele de contingenta și grafice de bare
+# Exemplu: relația între Sex și Tip
+sns.countplot(x='sex', data_frame=data_frame)
+plt.title('Count of Tips by Sex')
+plt.show()
+
+# Exemplu: relația între Day și Tip
+sns.countplot(x='day', data_frame=data_frame)
+plt.title('Count of Tips by Day')
+plt.show()
+
+# Tratarea valorilor lipsă (dacă există)
+# De exemplu, să presupunem că vrem să înlocuim valorile lipsă cu media
+data_frame.fillna(data_frame.mean(), inplace=True)
+
+# Codificarea variabilelor categorice folosind one-hot encoding
+data_encoded = pd.get_dummies(data_frame, columns=['sex', 'smoker', 'day', 'time'])
+print(data_encoded.head())
+
+# Definim caracteristicile independente (X) și variabila dependentă (y)
+X = data_encoded[['total_bill', 'sex_Female', 'sex_Male', 'smoker_No', 'smoker_Yes', 'day_Fri', 'day_Sat', 'day_Sun', 'day_Thur', 'time_Dinner', 'time_Lunch', 'size']]
+y = data_encoded['tip']
+
+# Calculăm media bacșișului pentru fiecare zi a săptămânii
+tip_by_day = data_frame.groupby('day')['tip'].mean().reset_index()
+
+# Vizualizăm media bacșișului în funcție de ziua săptămânii folosind un grafic de bare
+sns.barplot(x='day', y='tip', data_frame=tip_by_day)
+plt.title('Average Tip by Day of the Week')
+plt.xlabel('day')
+plt.ylabel('tip_by_day')
+plt.show()
+
+# Calculăm media bacșișului pentru fiecare moment al zilei
+tip_by_time = data_frame.groupby('time')['tip'].mean().reset_index()
+
+# Vizualizăm media bacșișului în funcție de momentul zilei folosind un grafic de bare
+sns.barplot(x='time', y='tip', data_frame=tip_by_time)
+plt.title('Average Tip by Time of Day')
+plt.xlabel('time')
+plt.ylabel('tip_by_day')
+plt.show()
+
+
+# Pregătim datele pentru antrenament și testare
+X = data_frame["total_bill"].values.reshape(-1, 1)
+y = data_frame["tip"].values
+
+# Împărțim setul de date în set de antrenament și set de testare
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+# Antrenăm modelul de regresie liniară
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Evaluăm performanța modelului pe setul de antrenament și setul de testare
+r2_train = model.score(X_train, y_train)
+r2_test = model.score(X_test, y_test)
+
+print("R-squared pentru setul de antrenament:", r2_train)
+print("R-squared pentru setul de testare:", r2_test)
+
+# Prezicem valorile pentru setul de antrenament și setul de testare
+y_train_pred = model.predict(X_train)
+y_test_pred = model.predict(X_test)
+
+# Vizualizăm rezultatele folosind un scatter plot
+plt.scatter(X_train, y_train, color='blue', label='Antrenare')
+plt.scatter(X_test, y_test, color='green', label='Testare')
+plt.plot(X_train, y_train_pred, color='red', label='Linia Regresiei Liniare')
+plt.title('Regresia Liniară Simplă: Total Bill vs Tip')
+plt.xlabel('total_bill')
+plt.ylabel('tip')
+plt.legend()
+plt.show()
